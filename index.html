@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Duck Engine 3D Ultra</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root { --main-color: #00f2ff; --accent-color: #7000ff; }
+        
+        body { 
+            background: #050505; color: white; 
+            font-family: 'Inter', -apple-system, sans-serif;
+            margin: 0; padding: 0; overflow-x: hidden;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        /* Холст для 3D фона */
+        #canvas-3d {
+            position: fixed; top: 0; left: 0; z-index: -1;
+            width: 100%; height: 100%;
+        }
+
+        .app-container { 
+            width: 90%; max-width: 400px; 
+            padding-top: 40px; position: relative; z-index: 10;
+        }
+        
+        .header h1 { 
+            font-size: 32px; margin: 0; 
+            background: linear-gradient(to right, var(--main-color), var(--accent-color)); 
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 15px rgba(0, 242, 255, 0.4));
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 24px; margin: 20px 0;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            transform-style: preserve-3d; /* Подготовка к 3D наклону */
+        }
+
+        .btn-main {
+            width: 100%; padding: 16px; border: none; border-radius: 16px;
+            background: linear-gradient(45deg, var(--main-color), var(--accent-color));
+            color: white; font-size: 16px; font-weight: 800; cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 242, 255, 0.4);
+            transition: 0.2s;
+        }
+
+        .btn-main:active { transform: scale(0.96); opacity: 0.9; }
+
+        .create-zone {
+            border: 2px dashed rgba(0, 242, 255, 0.2);
+            border-radius: 24px; padding: 30px; text-align: center;
+            background: rgba(0, 242, 255, 0.01);
+            margin-bottom: 50px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas-3d"></canvas>
+
+    <div class="app-container">
+        <div class="header">
+            <div style="font-size: 12px; color: var(--main-color); letter-spacing: 2px;">3D ENGINE CORE V4</div>
+            <h1>Duck Games</h1>
+        </div>
+
+        <div class="glass-card">
+            <div style="color: var(--main-color); font-size: 11px; font-weight: bold;">ACTIVE_INSTANCE</div>
+            <h3 style="margin: 8px 0; font-size: 22px;">Chicken Gun Mod</h3>
+            <p style="font-size: 14px; color: #ccc; line-height: 1.5;">Private server: 3D Assets & Custom Physics Engine.</p>
+            <button class="btn-main" onclick="openEngine()">OPEN_UI</button>
+        </div>
+
+        <div class="create-zone">
+            <div style="font-size: 50px; margin-bottom: 10px; filter: drop-shadow(0 0 10px var(--main-color));">💠</div>
+            <h2 style="margin: 0; font-size: 20px;">Новый проект</h2>
+            <p style="font-size: 13px; color: #777;">Разверни свой 3D движок в облаке</p>
+            <button class="btn-main" style="background: rgba(255,255,255,0.1); margin-top: 15px;" onclick="createNewProject()">BUILD NEW</button>
+        </div>
+    </div>
+
+    <script>
+        // Инициализация Telegram Web App
+        const tele = window.Telegram.WebApp;
+        tele.expand();
+        tele.enableClosingConfirmation();
+
+        // --- 3D ФОН (Three.js) ---
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas-3d'), alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        const particlesGeometry = new THREE.BufferGeometry();
+        const count = 800;
+        const positions = new Float32Array(count * 3);
+
+        for(let i = 0; i < count * 3; i++) {
+            positions[i] = (Math.random() - 0.5) * 10;
+        }
+
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const particlesMaterial = new THREE.PointsMaterial({ color: 0x00f2ff, size: 0.02 });
+        const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particlesMesh);
+
+        camera.position.z = 3;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            particlesMesh.rotation.y += 0.001;
+            particlesMesh.rotation.x += 0.0005;
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // --- ФУНКЦИИ ---
+        function openEngine() {
+            tele.HapticFeedback.impactOccurred('medium');
+            alert('Запуск Chicken Gun Mod Engine...');
+        }
+
+        function createNewProject() {
+            tele.HapticFeedback.notificationOccurred('success');
+            
+            // Запрашиваем название через стандартный prompt (на iOS это удобно)
+            const name = prompt("Введите кодовое название проекта:");
+            if (name) {
+                // Отправляем данные боту (нашему Python скрипту)
+                tele.sendData(JSON.stringify({
+                    type: "new_project",
+                    title: name,
+                    timestamp: Date.now()
+                }));
+            }
+        }
+
+        // Подстройка под размер экрана iPhone
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
