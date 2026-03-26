@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Duck Studio Ultimate v5.5 — Hybrid Game Engine</title>
+    <title>Duck Studio Ultimate — Roblox Edition</title>
     <style>
         * {
             margin: 0;
@@ -15,21 +15,209 @@
 
         body {
             background: #0a0a1a;
+            font-family: 'Segoe UI', 'Poppins', system-ui, -apple-system, sans-serif;
             overflow: hidden;
-            font-family: 'Segoe UI', 'Courier New', monospace;
-            touch-action: none;
+            height: 100vh;
+            width: 100vw;
+            touch-action: pan-x pan-y; /* разрешаем скролл только на UI, не на канвасе */
         }
 
-        /* Неоновый UI */
+        /* Основные цвета */
         :root {
             --neon: #0ff;
             --pink: #f0f;
             --gold: #ffaa44;
-            --dark-bg: #0a0a1a;
-            --panel-bg: rgba(10, 10, 26, 0.95);
+            --dark: #0a0a1a;
+            --card-bg: rgba(20, 20, 40, 0.9);
+            --border-glow: 0 0 10px rgba(0, 255, 255, 0.3);
         }
 
-        /* Вьюпорт движка */
+        /* Экраны */
+        .screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--dark);
+            overflow-y: auto;
+            display: none;
+            z-index: 10;
+        }
+        .screen.active {
+            display: block;
+        }
+
+        /* Лента игр */
+        .game-feed {
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .profile-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--neon);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: var(--border-glow);
+        }
+        .create-btn {
+            background: var(--gold);
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 0 10px rgba(255, 170, 68, 0.5);
+        }
+        .game-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            margin-bottom: 16px;
+            padding: 16px;
+            border: 1px solid var(--neon);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .game-card h3 {
+            color: var(--neon);
+            margin-bottom: 8px;
+        }
+        .game-card p {
+            color: #ccc;
+            font-size: 14px;
+        }
+
+        /* Профиль */
+        .profile-container {
+            max-width: 500px;
+            margin: 40px auto;
+            background: var(--card-bg);
+            border-radius: 32px;
+            padding: 24px;
+            border: 1px solid var(--neon);
+        }
+        .avatar {
+            width: 100px;
+            height: 100px;
+            background: var(--pink);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            cursor: pointer;
+        }
+        .profile-field {
+            margin-bottom: 20px;
+        }
+        .profile-field label {
+            display: block;
+            color: var(--neon);
+            margin-bottom: 5px;
+        }
+        .profile-field input, .profile-field textarea {
+            width: 100%;
+            background: #1e1e2e;
+            border: 1px solid var(--neon);
+            color: white;
+            padding: 10px;
+            border-radius: 16px;
+            font-family: inherit;
+        }
+        .save-profile {
+            background: var(--neon);
+            color: black;
+            border: none;
+            padding: 12px;
+            border-radius: 40px;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
+        }
+        .back-btn {
+            background: #333;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 40px;
+            margin-top: 20px;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        /* Редактор */
+        .editor-toolbar {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(12px);
+            padding: 10px;
+            z-index: 100;
+        }
+        .tool-btn {
+            background: #1a1a2a;
+            border: 1px solid var(--neon);
+            color: var(--neon);
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .mode-btn.active {
+            background: var(--neon);
+            color: black;
+        }
+        .control-panel {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+        }
+        .ctrl-btn {
+            width: 50px;
+            height: 50px;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid var(--gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: var(--gold);
+            cursor: pointer;
+        }
+        .home-btn {
+            background: var(--gold);
+            color: black;
+        }
         #viewport {
             position: absolute;
             top: 50%;
@@ -38,542 +226,600 @@
             height: 3000px;
             transform: translate(-50%, -50%);
             transform-style: preserve-3d;
-            transition: transform 0.2s ease;
-            will-change: transform;
+            transition: transform 0.1s ease;
             pointer-events: auto;
         }
-
-        /* Базовый стиль объектов */
         .obj {
             position: absolute;
-            cursor: grab;
-            transition: box-shadow 0.1s, transform 0.05s linear;
+            cursor: pointer;
+            transition: box-shadow 0.1s;
             will-change: transform;
-            pointer-events: auto;
         }
-        .obj:active { cursor: grabbing; }
         .obj.selected {
-            box-shadow: 0 0 0 3px var(--gold), 0 0 0 6px rgba(255, 170, 68, 0.3);
+            box-shadow: 0 0 0 3px var(--gold), 0 0 0 6px rgba(255,170,68,0.5);
             z-index: 1000;
         }
-
-        /* Типы объектов */
         .obj[data-type="box"] {
             background: linear-gradient(135deg, #2a6f8f, #0a3f5f);
             border: 2px solid var(--neon);
-            border-radius: 8px;
+            border-radius: 12px;
         }
         .obj[data-type="circle"] {
             background: radial-gradient(circle at 30% 30%, #ff66aa, #aa2266);
             border-radius: 50%;
             border: 2px solid var(--pink);
         }
-        .obj[data-type="text"] {
-            background: none;
-            color: var(--neon);
-            font-size: 20px;
-            text-shadow: 0 0 5px var(--neon);
-            white-space: nowrap;
-            font-weight: bold;
-            cursor: default;
-        }
-        .obj[data-type="portal"] {
-            background: radial-gradient(circle, #ff44aa, #aa22ff);
-            border-radius: 12px;
-            animation: pulse 1.5s infinite;
-        }
-        .obj[data-type="spike"] {
-            background: #aa3333;
-            clip-path: polygon(0% 100%, 50% 0%, 100% 100%);
-        }
-
-        @keyframes pulse {
-            0% { opacity: 0.7; transform: scale(1); }
-            100% { opacity: 1; transform: scale(1.05); }
-        }
-
-        /* UI Панели */
-        .ui-panel {
+        /* Скриптовое окно */
+        .script-panel {
             position: fixed;
-            background: var(--panel-bg);
-            backdrop-filter: blur(12px);
+            top: 20px;
+            right: 20px;
+            width: 350px;
+            background: rgba(10,10,26,0.95);
+            backdrop-filter: blur(20px);
             border: 1px solid var(--neon);
-            border-radius: 16px;
+            border-radius: 20px;
             padding: 12px;
-            color: #fff;
-            z-index: 2000;
-            font-size: 14px;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
-        }
-
-        #mode-switch {
-            top: 20px;
-            left: 20px;
-            display: flex;
-            gap: 10px;
-        }
-        .mode-btn {
-            background: #1a1a2a;
-            border: 1px solid var(--neon);
-            color: var(--neon);
-            padding: 8px 16px;
-            border-radius: 40px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.2s;
-        }
-        .mode-btn.active {
-            background: var(--neon);
-            color: #000;
-            box-shadow: 0 0 15px var(--neon);
-        }
-
-        #chat-panel {
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
-            max-width: 400px;
-            height: 300px;
-            display: flex;
-            flex-direction: column;
-        }
-        #chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            font-size: 12px;
-            padding: 8px;
-            background: rgba(0,0,0,0.6);
-            border-radius: 12px;
-            margin-bottom: 8px;
-        }
-        #chat-input {
-            display: flex;
-            gap: 8px;
-        }
-        #chat-input input {
-            flex: 1;
-            background: #1a1a2a;
-            border: 1px solid var(--neon);
-            color: #fff;
-            padding: 8px;
-            border-radius: 40px;
-            font-family: monospace;
-        }
-        #chat-input button {
-            background: var(--neon);
-            border: none;
-            border-radius: 40px;
-            padding: 8px 16px;
-            cursor: pointer;
-        }
-
-        #script-editor {
-            top: 20px;
-            right: 20px;
-            width: 400px;
-            height: 500px;
+            z-index: 200;
             display: none;
             flex-direction: column;
-            backdrop-filter: blur(20px);
+            gap: 10px;
         }
-        #script-editor.active {
+        .script-panel.active {
             display: flex;
         }
         #script-text {
-            flex: 1;
+            width: 100%;
+            height: 200px;
             background: #0a0a1a;
             color: #0f0;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
+            font-family: monospace;
             border: 1px solid var(--neon);
-            padding: 10px;
-            resize: none;
-            outline: none;
+            padding: 8px;
+            resize: vertical;
         }
-        .editor-toolbar {
+        .script-buttons {
             display: flex;
             gap: 8px;
-            margin-top: 8px;
+            flex-wrap: wrap;
         }
-        .editor-toolbar button {
-            background: #1a1a2a;
+        .script-preset {
+            background: #1e1e2e;
             border: 1px solid var(--neon);
             color: var(--neon);
-            padding: 6px 12px;
-            border-radius: 8px;
+            padding: 4px 8px;
+            border-radius: 20px;
             cursor: pointer;
-        }
-
-        #hammer-menu {
-            bottom: 20px;
-            right: 20px;
-            display: flex;
-            gap: 10px;
-        }
-        .hammer-btn {
-            background: var(--pink);
-            border: none;
-            border-radius: 40px;
-            padding: 12px 20px;
-            font-weight: bold;
-            cursor: pointer;
-            color: #000;
-        }
-
-        .gizmo {
-            position: absolute;
-            background: rgba(255,255,255,0.2);
-            border: 2px solid var(--gold);
-            border-radius: 4px;
-            pointer-events: none;
-            z-index: 2000;
+            font-size: 12px;
         }
     </style>
 </head>
 <body>
 
-<div id="viewport"></div>
-
-<!-- UI Панели -->
-<div id="mode-switch" class="ui-panel">
-    <button class="mode-btn active" data-mode="2d">2D Mode</button>
-    <button class="mode-btn" data-mode="3d">3D Mode</button>
-</div>
-
-<div id="chat-panel" class="ui-panel">
-    <div id="chat-messages"></div>
-    <div id="chat-input">
-        <input type="text" id="chat-text" placeholder="Сообщение...">
-        <button id="chat-send">📨</button>
+<!-- Экран ленты -->
+<div id="feed-screen" class="screen active">
+    <div class="game-feed">
+        <div class="header">
+            <div class="profile-icon" id="profile-btn">🐤</div>
+            <h1 style="color: var(--neon);">Duck Studio</h1>
+            <button class="create-btn" id="create-new-game">+</button>
+        </div>
+        <div id="games-list"></div>
     </div>
 </div>
 
-<div id="script-editor" class="ui-panel">
-    <textarea id="script-text" placeholder="Напишите скрипт для объекта..."></textarea>
+<!-- Экран профиля -->
+<div id="profile-screen" class="screen">
+    <div class="profile-container">
+        <div class="avatar" id="avatar-edit">🐥</div>
+        <div class="profile-field">
+            <label>Имя</label>
+            <input type="text" id="profile-name" placeholder="Ваше имя">
+        </div>
+        <div class="profile-field">
+            <label>Биография</label>
+            <textarea id="profile-bio" rows="3" placeholder="О себе..."></textarea>
+        </div>
+        <button class="save-profile" id="save-profile-btn">Сохранить</button>
+        <button class="back-btn" id="back-from-profile">Назад</button>
+    </div>
+</div>
+
+<!-- Экран редактора -->
+<div id="editor-screen" class="screen">
+    <div id="viewport"></div>
     <div class="editor-toolbar">
-        <button id="save-script">💾 Сохранить</button>
-        <button id="clear-script">🗑 Очистить</button>
-        <button id="debug-script">🐞 Дебаг</button>
-        <button id="close-editor">❌</button>
+        <button class="tool-btn" id="spawn-box">🧱 Куб</button>
+        <button class="tool-btn" id="spawn-circle">⚪ Сфера</button>
+        <button class="tool-btn mode-btn" data-mode="2d">2D</button>
+        <button class="tool-btn mode-btn" data-mode="3d">3D</button>
+        <button class="tool-btn" id="open-script-panel">📜 Скрипт</button>
+        <button class="tool-btn" id="save-world">💾 Сохранить</button>
+        <button class="tool-btn" id="exit-editor">🏠 Выйти</button>
     </div>
-</div>
-
-<div id="hammer-menu" class="ui-panel">
-    <button class="hammer-btn" id="spawn-text">📝 Текст</button>
-    <button class="hammer-btn" id="spawn-box">🧱 Куб</button>
-    <button class="hammer-btn" id="spawn-portal">🌀 Портал</button>
-    <button class="hammer-btn" id="toggle-editor">📜 Редактор</button>
+    <div class="control-panel">
+        <div class="ctrl-btn" data-dir="up">▲</div>
+        <div class="ctrl-btn" data-dir="left">◀</div>
+        <div class="ctrl-btn home-btn" id="home-cam">🏠</div>
+        <div class="ctrl-btn" data-dir="right">▶</div>
+        <div class="ctrl-btn" data-dir="down">▼</div>
+    </div>
+    <div id="script-panel" class="script-panel">
+        <textarea id="script-text" placeholder="Напишите скрипт для выбранных объектов..."></textarea>
+        <div class="script-buttons">
+            <button id="apply-script">Применить</button>
+            <button id="clear-script">Очистить</button>
+            <button id="debug-script">Дебаг</button>
+        </div>
+        <div id="preset-list" style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px;">
+            <!-- предустановки -->
+        </div>
+    </div>
 </div>
 
 <script>
-    // ============================================
-    // DUCK STUDIO ULTIMATE v5.5 — ПОЛНЫЙ ДВИЖОК
-    // ============================================
-    (function() {
-        // ----- КОНФИГ -----
-        const config = {
-            viewport: document.getElementById('viewport'),
-            camX: 0, camY: 0,
-            drag: false, dragStart: { x: 0, y: 0 },
-            objects: new Map(),
+    // ======================== ГЛОБАЛЬНОЕ СОСТОЯНИЕ ========================
+    const App = {
+        currentGameId: null,        // ID открытой игры
+        games: [],                  // список игр { id, name, description, createdAt }
+        profile: { name: "Игрок", bio: "Люблю уток!", avatar: "🐥" },
+        editor: {
+            viewport: null,
+            objects: new Map(),     // id -> DOM элемент
             nextId: 1,
+            camX: 0, camY: 0,
+            drag: false,
+            dragStart: { x: 0, y: 0 },
+            selectedObjects: new Set(), // множество id выбранных объектов
             is3D: false,
-            selectedObj: null,
-            ws: null,
-            userId: 'user_' + Math.random().toString(36).substr(2, 6),
-            cloudKey: 'duck_world'
-        };
+            worldData: null         // текущий мир (загруженный)
+        },
+        cloudReady: false
+    };
 
-        // ----- ИНИЦИАЛИЗАЦИЯ КАМЕРЫ -----
-        function initCamera() {
-            config.viewport.addEventListener('mousedown', (e) => {
-                if (e.target === config.viewport || e.target === document.body) {
-                    config.drag = true;
-                    config.dragStart = { x: e.clientX - config.camX, y: e.clientY - config.camY };
-                    config.viewport.style.cursor = 'grabbing';
-                }
-            });
-            window.addEventListener('mousemove', (e) => {
-                if (!config.drag) return;
-                config.camX = e.clientX - config.dragStart.x;
-                config.camY = e.clientY - config.dragStart.y;
-                updateCamera();
-            });
-            window.addEventListener('mouseup', () => {
-                config.drag = false;
-                config.viewport.style.cursor = 'grab';
-            });
-            // touch support
-            config.viewport.addEventListener('touchstart', (e) => {
-                if (e.target === config.viewport) {
-                    const touch = e.touches[0];
-                    config.drag = true;
-                    config.dragStart = { x: touch.clientX - config.camX, y: touch.clientY - config.camY };
-                }
-            });
-            window.addEventListener('touchmove', (e) => {
-                if (!config.drag) return;
-                const touch = e.touches[0];
-                config.camX = touch.clientX - config.dragStart.x;
-                config.camY = touch.clientY - config.dragStart.y;
-                updateCamera();
-            });
-            window.addEventListener('touchend', () => { config.drag = false; });
-        }
-
-        function updateCamera() {
-            config.viewport.style.transform = `translate(${config.camX}px, ${config.camY}px) ${config.is3D ? 'perspective(1200px) rotateX(55deg)' : ''}`;
-        }
-
-        // ----- СОЗДАНИЕ ОБЪЕКТОВ -----
-        function createObject(type, x, y, z = 0, width = 80, height = 80, script = '') {
-            const id = config.nextId++;
-            const obj = document.createElement('div');
-            obj.className = 'obj';
-            obj.setAttribute('data-type', type);
-            obj.setAttribute('data-id', id);
-            obj.setAttribute('data-script', script);
-            obj.dataset.x = x;
-            obj.dataset.y = y;
-            obj.dataset.z = z;
-            obj.style.width = width + 'px';
-            obj.style.height = height + 'px';
-            obj.style.left = (x - width/2) + 'px';
-            obj.style.top = (y - height/2) + 'px';
-            if (config.is3D) {
-                obj.style.transform = `translate3d(${x}px, ${y}px, ${z}px)`;
-            } else {
-                obj.style.transform = `translate(${x}px, ${y}px)`;
-            }
-
-            // Выделение
-            obj.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (config.selectedObj) config.selectedObj.classList.remove('selected');
-                config.selectedObj = obj;
-                obj.classList.add('selected');
-                document.getElementById('script-text').value = obj.getAttribute('data-script') || '';
-                e.stopPropagation();
-            });
-
-            // Перетаскивание
-            let isDragging = false;
-            obj.addEventListener('mousedown', (e) => {
-                if (e.button !== 0) return;
-                isDragging = true;
-                e.stopPropagation();
-                const startX = e.clientX;
-                const startY = e.clientY;
-                const startLeft = parseFloat(obj.style.left);
-                const startTop = parseFloat(obj.style.top);
-                const onMove = (moveEvent) => {
-                    if (!isDragging) return;
-                    const dx = moveEvent.clientX - startX;
-                    const dy = moveEvent.clientY - startY;
-                    const newX = startLeft + dx;
-                    const newY = startTop + dy;
-                    obj.style.left = newX + 'px';
-                    obj.style.top = newY + 'px';
-                    obj.dataset.x = newX + parseFloat(obj.style.width)/2;
-                    obj.dataset.y = newY + parseFloat(obj.style.height)/2;
-                    syncObjectToNetwork(id, { x: obj.dataset.x, y: obj.dataset.y });
-                };
-                const onUp = () => {
-                    isDragging = false;
-                    window.removeEventListener('mousemove', onMove);
-                    window.removeEventListener('mouseup', onUp);
-                    saveWorld();
-                };
-                window.addEventListener('mousemove', onMove);
-                window.addEventListener('mouseup', onUp);
-            });
-            config.viewport.appendChild(obj);
-            config.objects.set(id, obj);
-            saveWorld();
-            return obj;
-        }
-
-        // ----- СОХРАНЕНИЕ В ОБЛАКО (Telegram CloudStorage) -----
-        async function saveWorld() {
-            const worldData = [];
-            for (let [id, obj] of config.objects) {
-                worldData.push({
-                    id: id,
-                    type: obj.getAttribute('data-type'),
-                    x: obj.dataset.x,
-                    y: obj.dataset.y,
-                    z: obj.dataset.z || 0,
-                    width: obj.style.width,
-                    height: obj.style.height,
-                    script: obj.getAttribute('data-script')
+    // ======================== ОБЛАЧНОЕ ХРАНИЛИЩЕ ========================
+    const Cloud = {
+        async save(key, data) {
+            const json = JSON.stringify(data);
+            if (window.Telegram?.WebApp?.CloudStorage) {
+                return new Promise(resolve => {
+                    Telegram.WebApp.CloudStorage.setItem(key, json, () => resolve());
                 });
-            }
-            if (window.Telegram?.WebApp?.CloudStorage) {
-                Telegram.WebApp.CloudStorage.setItem(config.cloudKey, JSON.stringify(worldData), () => {});
-                console.log('World saved to cloud');
             } else {
-                localStorage.setItem(config.cloudKey, JSON.stringify(worldData));
+                localStorage.setItem(key, json);
+                return Promise.resolve();
             }
-        }
-
-        async function loadWorld() {
-            let data = null;
+        },
+        async load(key) {
             if (window.Telegram?.WebApp?.CloudStorage) {
-                data = await new Promise((resolve) => {
-                    Telegram.WebApp.CloudStorage.getItem(config.cloudKey, (err, val) => {
+                return new Promise(resolve => {
+                    Telegram.WebApp.CloudStorage.getItem(key, (err, val) => {
                         if (val) resolve(JSON.parse(val));
                         else resolve(null);
                     });
                 });
             } else {
-                const saved = localStorage.getItem(config.cloudKey);
-                if (saved) data = JSON.parse(saved);
+                const val = localStorage.getItem(key);
+                return val ? JSON.parse(val) : null;
             }
-            if (data) {
-                for (let objData of data) {
-                    const obj = createObject(objData.type, parseFloat(objData.x), parseFloat(objData.y), parseFloat(objData.z), parseFloat(objData.width), parseFloat(objData.height), objData.script);
-                    obj.setAttribute('data-script', objData.script);
+        }
+    };
+
+    // ======================== СОХРАНЕНИЕ ПРОФИЛЯ ========================
+    async function saveProfile() {
+        await Cloud.save('duck_profile', App.profile);
+    }
+    async function loadProfile() {
+        const data = await Cloud.load('duck_profile');
+        if (data) App.profile = data;
+        document.getElementById('profile-name').value = App.profile.name;
+        document.getElementById('profile-bio').value = App.profile.bio;
+        document.querySelector('.avatar').innerText = App.profile.avatar;
+        document.querySelector('.profile-icon').innerText = App.profile.avatar;
+    }
+
+    // ======================== СОХРАНЕНИЕ ИГР ========================
+    async function saveGamesList() {
+        await Cloud.save('duck_games', App.games);
+    }
+    async function loadGamesList() {
+        const data = await Cloud.load('duck_games');
+        if (data) App.games = data;
+        else {
+            // демо-игра
+            App.games = [{ id: 'game1', name: 'Мой первый мир', description: 'Творческий проект', createdAt: Date.now() }];
+            await saveGamesList();
+        }
+        renderGamesFeed();
+    }
+
+    // ======================== СОХРАНЕНИЕ КОНКРЕТНОЙ ИГРЫ ========================
+    async function saveCurrentGame() {
+        if (!App.currentGameId) return;
+        const worldData = [];
+        for (let [id, obj] of App.editor.objects) {
+            worldData.push({
+                id: id,
+                type: obj.getAttribute('data-type'),
+                x: obj.dataset.x,
+                y: obj.dataset.y,
+                z: obj.dataset.z || 0,
+                width: obj.style.width,
+                height: obj.style.height,
+                script: obj.getAttribute('data-script') || ''
+            });
+        }
+        await Cloud.save(`duck_game_${App.currentGameId}`, worldData);
+        alert('Игра сохранена в облако');
+    }
+
+    async function loadGame(gameId) {
+        const worldData = await Cloud.load(`duck_game_${gameId}`);
+        App.currentGameId = gameId;
+        // очищаем редактор
+        App.editor.viewport.innerHTML = '';
+        App.editor.objects.clear();
+        App.editor.selectedObjects.clear();
+        if (worldData && worldData.length) {
+            for (let objData of worldData) {
+                createObject(objData.type, parseFloat(objData.x), parseFloat(objData.y), parseFloat(objData.z || 0), parseFloat(objData.width), parseFloat(objData.height), objData.script);
+            }
+        } else {
+            // пустой мир
+            createObject('box', 500, 400, 0, 100, 100);
+            createObject('circle', 700, 500, 0, 80, 80);
+        }
+        // переключиться на экран редактора
+        showScreen('editor');
+    }
+
+    // ======================== РЕНДЕР ЛЕНТЫ ИГР ========================
+    function renderGamesFeed() {
+        const container = document.getElementById('games-list');
+        container.innerHTML = '';
+        for (let game of App.games) {
+            const card = document.createElement('div');
+            card.className = 'game-card';
+            card.innerHTML = `
+                <h3>${escapeHtml(game.name)}</h3>
+                <p>${escapeHtml(game.description)}</p>
+                <small>${new Date(game.createdAt).toLocaleDateString()}</small>
+            `;
+            card.addEventListener('click', () => loadGame(game.id));
+            container.appendChild(card);
+        }
+    }
+
+    // ======================== СОЗДАНИЕ НОВОЙ ИГРЫ ========================
+    async function createNewGame() {
+        const newId = 'game_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+        const newGame = {
+            id: newId,
+            name: 'Новая игра',
+            description: 'Ваш творческий мир',
+            createdAt: Date.now()
+        };
+        App.games.unshift(newGame);
+        await saveGamesList();
+        // создаём пустой мир
+        await Cloud.save(`duck_game_${newId}`, []);
+        renderGamesFeed();
+        loadGame(newId);
+    }
+
+    // ======================== РЕДАКТОР: ОБЪЕКТЫ ========================
+    function createObject(type, x, y, z = 0, width = 80, height = 80, script = '') {
+        const id = App.editor.nextId++;
+        const obj = document.createElement('div');
+        obj.className = 'obj';
+        obj.setAttribute('data-type', type);
+        obj.setAttribute('data-id', id);
+        obj.setAttribute('data-script', script);
+        obj.dataset.x = x;
+        obj.dataset.y = y;
+        obj.dataset.z = z;
+        obj.style.width = width + 'px';
+        obj.style.height = height + 'px';
+        obj.style.left = (x - width/2) + 'px';
+        obj.style.top = (y - height/2) + 'px';
+        updateObjectTransform(obj);
+
+        // Выделение (клик с Ctrl/Shift для множественного)
+        obj.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (e.ctrlKey || e.metaKey) {
+                if (App.editor.selectedObjects.has(id)) {
+                    App.editor.selectedObjects.delete(id);
+                    obj.classList.remove('selected');
+                } else {
+                    App.editor.selectedObjects.add(id);
+                    obj.classList.add('selected');
                 }
             } else {
-                // демо объекты
-                createObject('box', 400, 300, 0, 100, 100, 'console.log("Hello from Duck!");');
-                createObject('circle', 600, 500, 0, 80, 80);
-                createObject('portal', 800, 400, 0, 70, 70);
-                createObject('text', 500, 200, 0, 150, 40, 'this.innerText = "🦆 Duck Studio";');
+                // снимаем выделение со всех
+                for (let [oid, o] of App.editor.objects) {
+                    o.classList.remove('selected');
+                }
+                App.editor.selectedObjects.clear();
+                App.editor.selectedObjects.add(id);
+                obj.classList.add('selected');
             }
-        }
+            // показать скрипт в панели, если выбран один объект
+            if (App.editor.selectedObjects.size === 1) {
+                const selectedId = [...App.editor.selectedObjects][0];
+                const selectedObj = App.editor.objects.get(selectedId);
+                document.getElementById('script-text').value = selectedObj.getAttribute('data-script') || '';
+            } else {
+                document.getElementById('script-text').value = '';
+            }
+        });
 
-        // ----- 3D/2D ПЕРЕКЛЮЧЕНИЕ -----
-        function set3DMode(enabled) {
-            config.is3D = enabled;
+        // Перетаскивание (простое)
+        let isDragging = false;
+        obj.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return;
+            isDragging = true;
+            e.stopPropagation();
+            const startX = e.clientX;
+            const startY = e.clientY;
+            const startLeft = parseFloat(obj.style.left);
+            const startTop = parseFloat(obj.style.top);
+            const onMove = (moveEvent) => {
+                if (!isDragging) return;
+                const dx = moveEvent.clientX - startX;
+                const dy = moveEvent.clientY - startY;
+                const newX = startLeft + dx;
+                const newY = startTop + dy;
+                obj.style.left = newX + 'px';
+                obj.style.top = newY + 'px';
+                obj.dataset.x = newX + parseFloat(obj.style.width)/2;
+                obj.dataset.y = newY + parseFloat(obj.style.height)/2;
+                updateObjectTransform(obj);
+            };
+            const onUp = () => {
+                isDragging = false;
+                window.removeEventListener('mousemove', onMove);
+                window.removeEventListener('mouseup', onUp);
+            };
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onUp);
+        });
+        App.editor.viewport.appendChild(obj);
+        App.editor.objects.set(id, obj);
+        return obj;
+    }
+
+    function updateObjectTransform(obj) {
+        const x = parseFloat(obj.dataset.x);
+        const y = parseFloat(obj.dataset.y);
+        const z = parseFloat(obj.dataset.z || 0);
+        if (App.editor.is3D) {
+            obj.style.transform = `translate3d(${x}px, ${y}px, ${z}px)`;
+        } else {
+            obj.style.transform = `translate(${x}px, ${y}px)`;
+        }
+    }
+
+    function updateAllTransforms() {
+        for (let [id, obj] of App.editor.objects) {
+            updateObjectTransform(obj);
+        }
+    }
+
+    // ======================== КАМЕРА ========================
+    function updateCamera() {
+        const viewport = App.editor.viewport;
+        viewport.style.transform = `translate(${App.editor.camX}px, ${App.editor.camY}px) ${App.editor.is3D ? 'perspective(1200px) rotateX(55deg)' : ''}`;
+    }
+
+    function moveCamera(dx, dy) {
+        App.editor.camX += dx;
+        App.editor.camY += dy;
+        updateCamera();
+    }
+
+    function centerCamera() {
+        App.editor.camX = 0;
+        App.editor.camY = 0;
+        updateCamera();
+    }
+
+    function initCameraControls() {
+        const viewport = App.editor.viewport;
+        viewport.addEventListener('mousedown', (e) => {
+            if (e.target === viewport) {
+                App.editor.drag = true;
+                App.editor.dragStart = { x: e.clientX - App.editor.camX, y: e.clientY - App.editor.camY };
+                viewport.style.cursor = 'grabbing';
+                e.preventDefault();
+            }
+        });
+        window.addEventListener('mousemove', (e) => {
+            if (!App.editor.drag) return;
+            App.editor.camX = e.clientX - App.editor.dragStart.x;
+            App.editor.camY = e.clientY - App.editor.dragStart.y;
             updateCamera();
-            for (let [id, obj] of config.objects) {
-                const x = parseFloat(obj.dataset.x);
-                const y = parseFloat(obj.dataset.y);
-                const z = parseFloat(obj.dataset.z || 0);
-                if (enabled) {
-                    obj.style.transform = `translate3d(${x}px, ${y}px, ${z}px)`;
-                } else {
-                    obj.style.transform = `translate(${x}px, ${y}px)`;
-                }
+        });
+        window.addEventListener('mouseup', () => {
+            App.editor.drag = false;
+            viewport.style.cursor = 'grab';
+        });
+        // touch
+        viewport.addEventListener('touchstart', (e) => {
+            if (e.target === viewport) {
+                const touch = e.touches[0];
+                App.editor.drag = true;
+                App.editor.dragStart = { x: touch.clientX - App.editor.camX, y: touch.clientY - App.editor.camY };
+                e.preventDefault();
             }
-        }
+        });
+        window.addEventListener('touchmove', (e) => {
+            if (!App.editor.drag) return;
+            const touch = e.touches[0];
+            App.editor.camX = touch.clientX - App.editor.dragStart.x;
+            App.editor.camY = touch.clientY - App.editor.dragStart.y;
+            updateCamera();
+        });
+        window.addEventListener('touchend', () => { App.editor.drag = false; });
+    }
 
-        // ----- СЕТЬ (WebSocket для синхронизации) -----
-        function initNetwork() {
-            config.ws = new WebSocket('wss://echo.websocket.org'); // тестовый эхо-сервер
-            config.ws.onopen = () => {
-                console.log('WebSocket connected');
-                config.ws.send(JSON.stringify({ type: 'join', userId: config.userId }));
-            };
-            config.ws.onmessage = (e) => {
-                const msg = JSON.parse(e.data);
-                if (msg.type === 'sync_obj') {
-                    const obj = config.objects.get(parseInt(msg.objId));
-                    if (obj) {
-                        obj.style.left = (msg.data.x - parseFloat(obj.style.width)/2) + 'px';
-                        obj.style.top = (msg.data.y - parseFloat(obj.style.height)/2) + 'px';
-                        obj.dataset.x = msg.data.x;
-                        obj.dataset.y = msg.data.y;
-                    }
-                }
-            };
-        }
+    // ======================== 2D/3D ========================
+    function set3DMode(enabled) {
+        App.editor.is3D = enabled;
+        updateAllTransforms();
+        updateCamera();
+    }
 
-        function syncObjectToNetwork(id, data) {
-            if (config.ws && config.ws.readyState === WebSocket.OPEN) {
-                config.ws.send(JSON.stringify({ type: 'sync_obj', objId: id, data }));
-            }
+    // ======================== СКРИПТЫ ========================
+    function applyScriptToSelected() {
+        const script = document.getElementById('script-text').value;
+        if (App.editor.selectedObjects.size === 0) {
+            alert('Выберите хотя бы один объект');
+            return;
         }
-
-        // ----- ГЛОБАЛЬНЫЙ ЧАТ -----
-        function appendChatMessage(sender, text) {
-            const container = document.getElementById('chat-messages');
-            const msgDiv = document.createElement('div');
-            msgDiv.innerHTML = `<b>${sender}:</b> ${text}`;
-            container.appendChild(msgDiv);
-            container.scrollTop = container.scrollHeight;
+        for (let id of App.editor.selectedObjects) {
+            const obj = App.editor.objects.get(id);
+            obj.setAttribute('data-script', script);
         }
+        alert('Скрипт применён к ' + App.editor.selectedObjects.size + ' объектам');
+    }
 
-        function sendChatMessage() {
-            const input = document.getElementById('chat-text');
-            const text = input.value;
-            if (!text.trim()) return;
-            appendChatMessage(config.userId, text);
-            if (config.ws && config.ws.readyState === WebSocket.OPEN) {
-                config.ws.send(JSON.stringify({ type: 'global_chat', sender: config.userId, text }));
-            }
-            input.value = '';
+    function debugSelected() {
+        if (App.editor.selectedObjects.size === 0) {
+            alert('Выберите объект');
+            return;
         }
-
-        // ----- РЕДАКТОР СКРИПТОВ -----
-        function openScriptEditor() {
-            const editor = document.getElementById('script-editor');
-            editor.classList.toggle('active');
-        }
-
-        function saveScriptToObject() {
-            if (!config.selectedObj) return alert('Выберите объект');
-            const script = document.getElementById('script-text').value;
-            config.selectedObj.setAttribute('data-script', script);
-            saveWorld();
-            alert('Скрипт сохранён');
-        }
-
-        function debugScript() {
-            if (!config.selectedObj) return alert('Выберите объект');
-            const script = config.selectedObj.getAttribute('data-script');
-            if (!script) return alert('Скрипт пуст');
+        for (let id of App.editor.selectedObjects) {
+            const obj = App.editor.objects.get(id);
+            const script = obj.getAttribute('data-script');
+            if (!script) continue;
             try {
                 const func = new Function('obj', script);
-                func(config.selectedObj);
-                alert('Скрипт выполнен без ошибок');
+                func(obj);
             } catch(e) {
-                alert('Ошибка: ' + e.message);
+                alert(`Ошибка в объекте ${id}: ${e.message}`);
             }
         }
+        alert('Дебаг завершён');
+    }
 
-        // ----- HAMMER MENU (спавн объектов)-----
-        function spawnFloatingText() {
-            const x = 400 + Math.random() * 800;
-            const y = 300 + Math.random() * 600;
-            const textObj = createObject('text', x, y, 0, 200, 50, 'this.innerText = "Новая надпись 🦆";');
-            textObj.innerText = 'Новая надпись 🦆';
+    // предустановки скриптов
+    const presets = [
+        { name: "Поворот", script: "obj.style.transform += ' rotate(10deg)';" },
+        { name: "Цвет", script: "obj.style.backgroundColor = '#ff00ff';" },
+        { name: "Скачок", script: "obj.style.transform += ' translateY(-20px)'; setTimeout(()=>obj.style.transform='',500);" }
+    ];
+
+    function renderPresets() {
+        const container = document.getElementById('preset-list');
+        container.innerHTML = '';
+        presets.forEach(preset => {
+            const btn = document.createElement('button');
+            btn.className = 'script-preset';
+            btn.innerText = preset.name;
+            btn.addEventListener('click', () => {
+                document.getElementById('script-text').value = preset.script;
+            });
+            container.appendChild(btn);
+        });
+    }
+
+    // ======================== ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ ========================
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(`${screenId}-screen`).classList.add('active');
+        if (screenId === 'editor') {
+            // при входе в редактор убедимся, что камера и мир загружены
+            if (!App.editor.viewport) {
+                App.editor.viewport = document.getElementById('viewport');
+                initCameraControls();
+            }
+            updateCamera();
         }
+    }
 
-        // ----- ИНИЦИАЛИЗАЦИЯ UI -----
-        function bindUI() {
-            document.getElementById('mode-switch').addEventListener('click', (e) => {
-                const btn = e.target.closest('.mode-btn');
-                if (!btn) return;
+    // ======================== ИНИЦИАЛИЗАЦИЯ ========================
+    async function init() {
+        // Telegram WebApp
+        if (window.Telegram?.WebApp) {
+            Telegram.WebApp.ready();
+            Telegram.WebApp.expand();
+        }
+        await loadProfile();
+        await loadGamesList();
+        renderPresets();
+
+        // Элементы управления
+        document.getElementById('profile-btn').addEventListener('click', () => showScreen('profile'));
+        document.getElementById('create-new-game').addEventListener('click', createNewGame);
+        document.getElementById('save-profile-btn').addEventListener('click', async () => {
+            App.profile.name = document.getElementById('profile-name').value;
+            App.profile.bio = document.getElementById('profile-bio').value;
+            // avatar можно менять кликом, но упростим
+            await saveProfile();
+            alert('Профиль сохранён');
+        });
+        document.getElementById('back-from-profile').addEventListener('click', () => showScreen('feed'));
+
+        // Редактор
+        document.getElementById('exit-editor').addEventListener('click', async () => {
+            await saveCurrentGame();
+            showScreen('feed');
+        });
+        document.getElementById('save-world').addEventListener('click', saveCurrentGame);
+        document.getElementById('spawn-box').addEventListener('click', () => {
+            createObject('box', 500 + Math.random()*200, 400 + Math.random()*200, 0, 80, 80);
+        });
+        document.getElementById('spawn-circle').addEventListener('click', () => {
+            createObject('circle', 500 + Math.random()*200, 400 + Math.random()*200, 0, 70, 70);
+        });
+        document.getElementById('open-script-panel').addEventListener('click', () => {
+            const panel = document.getElementById('script-panel');
+            panel.classList.toggle('active');
+        });
+        document.getElementById('apply-script').addEventListener('click', applyScriptToSelected);
+        document.getElementById('debug-script').addEventListener('click', debugSelected);
+        document.getElementById('clear-script').addEventListener('click', () => {
+            document.getElementById('script-text').value = '';
+        });
+
+        // режимы 2D/3D
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
                 const mode = btn.dataset.mode;
                 if (mode === '3d') set3DMode(true);
                 else set3DMode(false);
                 document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
             });
-            document.getElementById('chat-send').addEventListener('click', sendChatMessage);
-            document.getElementById('chat-text').addEventListener('keypress', (e) => { if(e.key === 'Enter') sendChatMessage(); });
-            document.getElementById('toggle-editor').addEventListener('click', openScriptEditor);
-            document.getElementById('save-script').addEventListener('click', saveScriptToObject);
-            document.getElementById('clear-script').addEventListener('click', () => { document.getElementById('script-text').value = ''; });
-            document.getElementById('debug-script').addEventListener('click', debugScript);
-            document.getElementById('close-editor').addEventListener('click', () => { document.getElementById('script-editor').classList.remove('active'); });
-            document.getElementById('spawn-text').addEventListener('click', spawnFloatingText);
-            document.getElementById('spawn-box').addEventListener('click', () => createObject('box', 500, 400, 0, 80, 80));
-            document.getElementById('spawn-portal').addEventListener('click', () => createObject('portal', 600, 500, 0, 70, 70));
-        }
-
-        // ----- ЗАПУСК -----
-        window.addEventListener('load', async () => {
-            initCamera();
-            await loadWorld();
-            bindUI();
-            initNetwork();
-            if (window.Telegram?.WebApp) Telegram.WebApp.ready();
-            console.log('Duck Studio Ultimate v5.5 — fully loaded');
         });
-    })();
+        // кнопки управления
+        document.querySelectorAll('.ctrl-btn[data-dir]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const dir = btn.dataset.dir;
+                const step = 50;
+                if (dir === 'up') moveCamera(0, step);
+                if (dir === 'down') moveCamera(0, -step);
+                if (dir === 'left') moveCamera(step, 0);
+                if (dir === 'right') moveCamera(-step, 0);
+            });
+        });
+        document.getElementById('home-cam').addEventListener('click', centerCamera);
+
+        // показываем ленту
+        showScreen('feed');
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    init();
 </script>
 </body>
 </html>
