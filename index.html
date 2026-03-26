@@ -3,70 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Duck Studio Pro</title>
+    <title>Duck Studio MAX Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root { --neon: #00f2ff; --pink: #ff00ff; --gold: #ffd700; --bg: #0a0a0a; }
-        body { background: var(--bg); color: var(--neon); font-family: 'Consolas', monospace; margin: 0; overflow: hidden; }
+        :root { --neon: #00f2ff; --pink: #ff00ff; --gold: #ffd700; --bg: #000; }
+        body { background: var(--bg); color: var(--neon); font-family: 'Consolas', monospace; margin: 0; padding: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
         
-        /* ИНТЕРФЕЙС ШТАБА */
-        .top-bar { display: flex; justify-content: space-between; padding: 10px; background: #111; border-bottom: 2px solid var(--neon); font-size: 12px; }
-        .money-count { color: var(--gold); }
+        .top-bar { display: flex; justify-content: space-between; padding: 8px 15px; background: #111; border-bottom: 2px solid var(--neon); font-size: 11px; z-index: 10; }
 
-        /* ИГРОВОЕ ПОЛЕ */
+        /* ВЬЮПОРТ НА ВЕСЬ ЭКРАН */
         #viewport { 
-            width: 100vw; height: 250px; background: #151515; position: relative;
-            background-image: radial-gradient(circle, #333 1px, transparent 1px); background-size: 20px 20px;
-            overflow: hidden; cursor: crosshair;
+            flex-grow: 1; width: 100vw; background: #050505; position: relative;
+            background-image: radial-gradient(rgba(0, 242, 255, 0.15) 1px, transparent 1px); background-size: 25px 25px;
+            overflow: hidden; box-shadow: inset 0 0 50px #000;
         }
-        .obj { position: absolute; width: 20px; height: 20px; border-radius: 3px; box-shadow: 0 0 5px currentColor; transition: 0.2s; }
+        .obj { position: absolute; width: 24px; height: 24px; border: 1px solid rgba(255,255,255,0.4); transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .selected { border: 2px solid white !important; box-shadow: 0 0 20px white !important; z-index: 100; transform: scale(1.1); }
 
-        /* ИНСТРУМЕНТЫ */
-        .toolbar { display: flex; background: #1a1a1a; padding: 10px; gap: 10px; overflow-x: auto; border-bottom: 1px solid #333; }
-        .color-dot { width: 25px; height: 25px; border-radius: 50%; border: 2px solid white; cursor: pointer; flex-shrink: 0; }
-        
-        /* СКРИПТ-ЗОНА */
-        .script-zone { padding: 10px; }
-        textarea { width: 90%; background: #000; color: #0f0; border: 1px solid #0f0; padding: 10px; font-family: monospace; height: 60px; border-radius: 5px; }
+        /* МЕНЮ БЫСТРЫХ СКРИПТОВ */
+        .script-lib { background: #1a1a1a; padding: 8px; display: flex; gap: 8px; overflow-x: auto; border-top: 1px solid #333; }
+        .lib-btn { background: #222; color: #fff; border: 1px solid var(--pink); padding: 6px 12px; border-radius: 4px; font-size: 10px; white-space: nowrap; cursor: pointer; }
+        .lib-btn:active { background: var(--pink); }
 
-        /* КНОПКИ */
-        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
-        .btn { background: #222; border: 1px solid var(--neon); color: var(--neon); padding: 12px; border-radius: 5px; font-size: 11px; cursor: pointer; }
+        /* ИНСПЕКТОР */
+        .inspector-panel { background: #111; padding: 10px; border-top: 1px solid #333; }
+        .controls-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        #colorPicker { width: 45px; height: 30px; background: none; border: 1px solid white; border-radius: 4px; }
+        textarea { width: 95%; background: #000; color: #0f0; border: 1px solid #333; height: 60px; font-size: 12px; padding: 8px; border-radius: 5px; outline: none; }
+
+        /* ГЛАВНОЕ МЕНЮ */
+        .main-menu { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 8px; background: #111; border-top: 2px solid #222; }
+        .btn { background: #1a1a1a; border: 1px solid var(--neon); color: var(--neon); padding: 12px 2px; font-size: 10px; font-weight: bold; cursor: pointer; border-radius: 4px; text-transform: uppercase; }
         .btn:active { background: var(--neon); color: #000; }
         .btn-gold { border-color: var(--gold); color: var(--gold); }
+        .btn-active { background: var(--pink) !important; color: white !important; border-color: white; }
 
-        .hidden { display: none; }
+        #fx-overlay { pointer-events: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--neon); opacity: 0; z-index: 1000; transition: 0.3s; }
     </style>
 </head>
 <body>
 
+<div id="fx-overlay"></div>
+
 <div class="top-bar">
+    <div style="color: var(--gold)">DUCKS: <span id="balance">1000</span> 🟡</div>
+    <div id="selected-info">ВЫБЕРИ ОБЪЕКТ</div>
     <div>LVL: <span id="lvl">1</span></div>
-    <div class="money-count">DUCKS: <span id="balance">1000</span> 🟡</div>
-    <div id="mode-display">MODE: 2D</div>
 </div>
 
-<div class="toolbar" id="palette">
-    <div class="color-dot" style="background: #00f2ff;" onclick="setColor('#00f2ff')"></div>
-    <div class="color-dot" style="background: #ff00ff;" onclick="setColor('#ff00ff')"></div>
-    <div class="color-dot" style="background: #ffd700;" onclick="setColor('#ffd700')"></div>
-    <div class="color-dot" style="background: #ff4444;" onclick="setColor('#ff4444')"></div>
-    <div class="color-dot" style="background: #44ff44;" onclick="setColor('#44ff44')"></div>
+<div id="viewport" onclick="handleMapClick(event)">
+    <div id="hint" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.2; font-size: 18px;">[ DUCK ENGINE READY ]</div>
 </div>
 
-<div id="viewport" onclick="spawn(event)"></div>
-
-<div class="script-zone">
-    <label>📜 PYTHON/JS SCRIPT ENGINE:</label>
-    <textarea id="scriptInput" placeholder="move_objects(speed=5)..."></textarea>
+<div class="script-lib">
+    <button class="lib-btn" onclick="setScript('move_x')">↔️ ДВИЖЕНИЕ X</button>
+    <button class="lib-btn" onclick="setScript('jump')">🚀 ПРЫЖОК</button>
+    <button class="lib-btn" onclick="setScript('rotate')">🔄 ВРАЩЕНИЕ</button>
+    <button class="lib-btn" onclick="setScript('blink')">💡 МИГАНИЕ</button>
+    <button class="lib-btn" onclick="setScript('ghost')">👻 ПРОЗРАЧНОСТЬ</button>
 </div>
 
-<div class="controls">
-    <button class="btn" onclick="toggleMode()">🔄 СМЕНИТЬ 2D/3D</button>
-    <button class="btn" onclick="executeScript()">▶️ ЗАПУСТИТЬ СКРИПТ</button>
-    <button class="btn btn-gold" onclick="buyUpgrade()">⚡ УЛУЧШИТЬ (500 🟡)</button>
-    <button class="btn" onclick="publishProject()">🌐 ОПУБЛИКОВАТЬ</button>
-    <button class="btn" onclick="clearAll()" style="border-color: red; color: red;">🧹 СБРОС</button>
+<div class="inspector-panel">
+    <div class="controls-row">
+        <span>🎨 ЦВЕТ:</span>
+        <input type="color" id="colorPicker" value="#00f2ff" onchange="currentColor = this.value">
+        <button class="btn" style="flex-grow: 1; border-color: var(--pink); color: var(--pink);" onclick="applyScript()">💾 СОХРАНИТЬ ЛОГИКУ</button>
+    </div>
+    <textarea id="scriptInput" placeholder="// Выбери скрипт из меню выше или напиши свой..."></textarea>
+</div>
+
+<div class="main-menu">
+    <button class="btn" onclick="createNew()">➕ СОЗДАТЬ</button>
+    <button class="btn" id="btn3d" onclick="toggle3D()">🧊 3D РЕЖИМ</button>
+    <button class="btn" onclick="showSettings()">⚙️ ОПЦИИ</button>
+    <button class="btn" onclick="publish()">🌐 В СЕТЬ</button>
+    <button class="btn btn-gold" onclick="buyUpgrade()">⚡ UPGRADE</button>
+    <button class="btn" onclick="clearAll()" style="color:#ff4444; border-color:#ff4444;">🧹 СБРОС</button>
 </div>
 
 <script>
@@ -75,74 +87,105 @@
 
     let currentColor = '#00f2ff';
     let balance = 1000;
-    let level = 1;
+    let lvl = 1;
     let is3D = false;
+    let selectedObject = null;
 
-    function setColor(c) {
-        currentColor = c;
+    // БИБЛИОТЕКА СКРИПТОВ
+    const scripts = {
+        'move_x': 'obj.animate({left: "+=50px"}, 500); // Двигаться вправо',
+        'jump': 'obj.style.transition = "0.3s"; obj.style.top = "-=30px"; // Прыжок',
+        'rotate': 'obj.style.transform += "rotate(45deg)"; // Поворот',
+        'blink': 'setInterval(() => { obj.style.opacity = (obj.style.opacity == 0 ? 1 : 0); }, 500);',
+        'ghost': 'obj.style.opacity = "0.5"; obj.style.filter = "blur(2px)";'
+    };
+
+    function setScript(type) {
+        if(!selectedObject) return tg.showAlert("Сначала нажми на кубик на экране!");
+        document.getElementById('scriptInput').value = scripts[type];
         tg.HapticFeedback.impactOccurred('light');
     }
 
+    function handleMapClick(e) {
+        if (e.target.classList.contains('obj')) {
+            selectObject(e.target);
+            return;
+        }
+        spawn(e);
+    }
+
     function spawn(e) {
+        document.getElementById('hint').style.display = 'none';
         const view = document.getElementById('viewport');
         const rect = view.getBoundingClientRect();
-        const x = e.clientX - rect.left - 10;
-        const y = e.clientY - rect.top - 10;
+        const x = e.clientX - rect.left - 12;
+        const y = e.clientY - rect.top - 12;
 
         const obj = document.createElement('div');
         obj.className = 'obj';
         obj.style.left = x + 'px';
         obj.style.top = y + 'px';
-        obj.style.color = currentColor;
-        obj.style.background = currentColor;
+        obj.style.backgroundColor = currentColor;
+        obj.style.boxShadow = `0 0 15px ${currentColor}`;
         
-        if(is3D) {
-            obj.style.transform = 'rotateX(45deg) rotateZ(45deg)';
-            obj.style.height = '40px';
-        }
-
+        if(is3D) apply3D(obj);
         view.appendChild(obj);
+        selectObject(obj);
     }
 
-    function toggleMode() {
+    function selectObject(el) {
+        if(selectedObject) selectedObject.classList.remove('selected');
+        selectedObject = el;
+        selectedObject.classList.add('selected');
+        document.getElementById('selected-info').innerText = "ОБЪЕКТ ВЫБРАН";
+        tg.HapticFeedback.impactOccurred('medium');
+    }
+
+    function toggle3D() {
         is3D = !is3D;
-        document.getElementById('mode-display').innerText = is3D ? "MODE: 3D" : "MODE: 2D";
-        tg.showAlert(is3D ? "Переход в 3D пространство Октокота..." : "Возврат в 2D чертежи.");
+        const fx = document.getElementById('fx-overlay');
+        fx.style.opacity = '0.5';
+        setTimeout(() => {
+            fx.style.opacity = '0';
+            document.getElementById('btn3d').classList.toggle('btn-active');
+            tg.showAlert(is3D ? "ПЕРЕКЛЮЧЕНИЕ В 3D..." : "ВОЗВРАТ В 2D...");
+            document.querySelectorAll('.obj').forEach(o => is3D ? apply3D(o) : remove3D(o));
+        }, 300);
+    }
+
+    function apply3D(el) {
+        el.style.transform = "perspective(600px) rotateX(45deg) rotateZ(45deg)";
+        el.style.height = "45px";
+    }
+
+    function remove3D(el) {
+        el.style.transform = "none"; el.style.height = "24px";
+    }
+
+    function applyScript() {
+        if(!selectedObject) return tg.showAlert("Выбери объект!");
+        tg.HapticFeedback.notificationOccurred('success');
+        tg.showAlert("Логика привязана к объекту! Октокот запускает код...");
     }
 
     function buyUpgrade() {
         if(balance >= 500) {
-            balance -= 500;
-            level++;
+            balance -= 500; lvl++;
             document.getElementById('balance').innerText = balance;
-            document.getElementById('lvl').innerText = level;
-            tg.showAlert("Движок улучшен до LVL " + level + "! Разблокированы новые частицы.");
-        } else {
-            tg.showAlert("Недостаточно золотых уток! Нужно больше ресурсов.");
-        }
-    }
-
-    function executeScript() {
-        const sc = document.getElementById('scriptInput').value;
-        if(sc.includes("move")) {
-            const objs = document.querySelectorAll('.obj');
-            objs.forEach(o => { o.style.left = (parseInt(o.style.left) + 50) + 'px'; });
-            tg.HapticFeedback.notificationOccurred('success');
-        } else {
-            tg.showAlert("Скрипт принят! Октокот обрабатывает логику...");
-        }
-    }
-
-    function publishProject() {
-        tg.showConfirm("Опубликовать проект в облако Duck Games?", (ok) => {
-            if(ok) tg.showAlert("✅ ПРОЕКТ ОПУБЛИКОВАН! Ссылка отправлена в штаб.");
-        });
+            document.getElementById('lvl').innerText = lvl;
+            tg.showAlert("ДВИЖОК УЛУЧШЕН!");
+        } else { tg.showAlert("Мало золота!"); }
     }
 
     function clearAll() {
-        document.getElementById('viewport').innerHTML = '';
+        document.getElementById('viewport').innerHTML = '<div id="hint" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.2; font-size: 18px;">[ DUCK ENGINE READY ]</div>';
+        selectedObject = null;
+        document.getElementById('selected-info').innerText = "ВЫБЕРИ ОБЪЕКТ";
     }
-</script>
 
+    function publish() { tg.showConfirm("Опубликовать?", (ok) => { if(ok) tg.showAlert("В СЕТИ!"); }); }
+    function createNew() { tg.showConfirm("Новый проект?", (ok) => { if(ok) clearAll(); }); }
+    function showSettings() { tg.showAlert("DUCK STUDIO v4.6\nMode: Full Access\nRender: WebGL Core"); }
+</script>
 </body>
 </html>
