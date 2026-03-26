@@ -3,82 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Duck Studio MAX Pro</title>
+    <title>Duck Studio Ultimate</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { --neon: #00f2ff; --pink: #ff00ff; --gold: #ffd700; --bg: #000; }
-        body { background: var(--bg); color: var(--neon); font-family: 'Consolas', monospace; margin: 0; padding: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        body { background: var(--bg); color: #fff; font-family: 'Consolas', monospace; margin: 0; padding: 0; overflow: hidden; height: 100vh; }
         
+        /* СТАНДАРТНОЕ МЕНЮ (ХАБ) */
+        #hub { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; display: flex; flex-direction: column; }
+        .hub-header { padding: 20px; background: #111; border-bottom: 2px solid var(--neon); display: flex; justify-content: space-between; align-items: center; }
+        .profile { display: flex; align-items: center; gap: 10px; }
+        .avatar { width: 40px; height: 40px; background: var(--pink); border-radius: 50%; border: 2px solid #fff; }
+        .feed { flex-grow: 1; padding: 15px; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .game-card { background: #1a1a1a; border-radius: 10px; padding: 10px; border: 1px solid #333; text-align: center; }
+        .game-thumb { width: 100%; height: 80px; background: #333; border-radius: 5px; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .create-plus { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: var(--neon); border-radius: 50%; color: #000; font-size: 40px; border: none; box-shadow: 0 0 20px var(--neon); }
+
+        /* РЕДАКТОР */
+        #editor { display: none; flex-direction: column; height: 100vh; }
         .top-bar { display: flex; justify-content: space-between; padding: 8px 15px; background: #111; border-bottom: 2px solid var(--neon); font-size: 11px; z-index: 10; }
-
-        /* ВЬЮПОРТ НА ВЕСЬ ЭКРАН */
+        
+        #world-container { flex-grow: 1; position: relative; overflow: hidden; perspective: 1000px; background: #050505; }
         #viewport { 
-            flex-grow: 1; width: 100vw; background: #050505; position: relative;
-            background-image: radial-gradient(rgba(0, 242, 255, 0.15) 1px, transparent 1px); background-size: 25px 25px;
-            overflow: hidden; box-shadow: inset 0 0 50px #000;
+            width: 2000px; height: 2000px; position: absolute; top: 0; left: 0;
+            background-image: radial-gradient(rgba(0, 242, 255, 0.1) 1px, transparent 1px); background-size: 30px 30px;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d;
         }
-        .obj { position: absolute; width: 24px; height: 24px; border: 1px solid rgba(255,255,255,0.4); transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .selected { border: 2px solid white !important; box-shadow: 0 0 20px white !important; z-index: 100; transform: scale(1.1); }
 
-        /* МЕНЮ БЫСТРЫХ СКРИПТОВ */
-        .script-lib { background: #1a1a1a; padding: 8px; display: flex; gap: 8px; overflow-x: auto; border-top: 1px solid #333; }
-        .lib-btn { background: #222; color: #fff; border: 1px solid var(--pink); padding: 6px 12px; border-radius: 4px; font-size: 10px; white-space: nowrap; cursor: pointer; }
-        .lib-btn:active { background: var(--pink); }
+        /* ОБЪЕКТЫ */
+        .obj { position: absolute; width: 30px; height: 30px; transition: box-shadow 0.3s, border 0.3s; transform-style: preserve-3d; }
+        .shape-circle { border-radius: 50%; }
+        .shape-tri { width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 30px solid; background: none !important; }
+        .selected { border: 2px solid white !important; box-shadow: 0 0 20px white !important; }
 
-        /* ИНСПЕКТОР */
-        .inspector-panel { background: #111; padding: 10px; border-top: 1px solid #333; }
-        .controls-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-        #colorPicker { width: 45px; height: 30px; background: none; border: 1px solid white; border-radius: 4px; }
-        textarea { width: 95%; background: #000; color: #0f0; border: 1px solid #333; height: 60px; font-size: 12px; padding: 8px; border-radius: 5px; outline: none; }
+        /* НАВИГАЦИЯ (D-PAD) */
+        .d-pad { position: absolute; bottom: 200px; left: 20px; display: grid; grid-template-columns: 40px 40px 40px; gap: 5px; z-index: 100; opacity: 0.6; }
+        .nav-btn { background: #222; border: 1px solid var(--neon); color: #fff; padding: 10px; text-align: center; border-radius: 5px; }
 
-        /* ГЛАВНОЕ МЕНЮ */
-        .main-menu { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 8px; background: #111; border-top: 2px solid #222; }
-        .btn { background: #1a1a1a; border: 1px solid var(--neon); color: var(--neon); padding: 12px 2px; font-size: 10px; font-weight: bold; cursor: pointer; border-radius: 4px; text-transform: uppercase; }
-        .btn:active { background: var(--neon); color: #000; }
-        .btn-gold { border-color: var(--gold); color: var(--gold); }
-        .btn-active { background: var(--pink) !important; color: white !important; border-color: white; }
+        /* ПАНЕЛИ */
+        .tool-row { background: #111; padding: 5px; display: flex; gap: 8px; overflow-x: auto; border-top: 1px solid #333; }
+        .inspector { background: #111; padding: 10px; border-top: 1px solid #333; }
+        textarea { width: 95%; background: #000; color: #0f0; border: 1px solid #333; height: 50px; font-size: 12px; }
 
-        #fx-overlay { pointer-events: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--neon); opacity: 0; z-index: 1000; transition: 0.3s; }
+        .main-menu { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 8px; background: #111; border-top: 2px solid #222; }
+        .btn { background: #1a1a1a; border: 1px solid var(--neon); color: var(--neon); padding: 10px 2px; font-size: 9px; font-weight: bold; border-radius: 4px; }
+        
+        .hidden { display: none; }
+        #fx-scan { pointer-events: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; border: 2px solid var(--neon); opacity: 0; z-index: 1500; }
     </style>
 </head>
 <body>
 
-<div id="fx-overlay"></div>
-
-<div class="top-bar">
-    <div style="color: var(--gold)">DUCKS: <span id="balance">1000</span> 🟡</div>
-    <div id="selected-info">ВЫБЕРИ ОБЪЕКТ</div>
-    <div>LVL: <span id="lvl">1</span></div>
-</div>
-
-<div id="viewport" onclick="handleMapClick(event)">
-    <div id="hint" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.2; font-size: 18px;">[ DUCK ENGINE READY ]</div>
-</div>
-
-<div class="script-lib">
-    <button class="lib-btn" onclick="setScript('move_x')">↔️ ДВИЖЕНИЕ X</button>
-    <button class="lib-btn" onclick="setScript('jump')">🚀 ПРЫЖОК</button>
-    <button class="lib-btn" onclick="setScript('rotate')">🔄 ВРАЩЕНИЕ</button>
-    <button class="lib-btn" onclick="setScript('blink')">💡 МИГАНИЕ</button>
-    <button class="lib-btn" onclick="setScript('ghost')">👻 ПРОЗРАЧНОСТЬ</button>
-</div>
-
-<div class="inspector-panel">
-    <div class="controls-row">
-        <span>🎨 ЦВЕТ:</span>
-        <input type="color" id="colorPicker" value="#00f2ff" onchange="currentColor = this.value">
-        <button class="btn" style="flex-grow: 1; border-color: var(--pink); color: var(--pink);" onclick="applyScript()">💾 СОХРАНИТЬ ЛОГИКУ</button>
+<div id="hub">
+    <div class="hub-header">
+        <div class="profile">
+            <div class="avatar"></div>
+            <div>
+                <div style="font-weight: bold;">OctoDeveloper</div>
+                <div style="font-size: 10px; color: var(--gold);">Gold Member</div>
+            </div>
+        </div>
+        <button class="btn" style="padding: 5px 15px;" onclick="showSettings()">⚙️</button>
     </div>
-    <textarea id="scriptInput" placeholder="// Выбери скрипт из меню выше или напиши свой..."></textarea>
+    <div class="feed">
+        <div class="game-card">
+            <div class="game-thumb">🐥</div>
+            <div style="font-size: 12px;">Chicken War</div>
+        </div>
+        <div class="game-card">
+            <div class="game-thumb">🌌</div>
+            <div style="font-size: 12px;">Duck Space</div>
+        </div>
+        <div class="game-card" onclick="tg.showAlert('Загрузка плейса...')">
+            <div class="game-thumb">🏜️</div>
+            <div style="font-size: 12px;">Troll Obby</div>
+        </div>
+        <div class="game-card" id="savedProjectCard" style="border-color: var(--pink); display: none;">
+            <div class="game-thumb">💾</div>
+            <div style="font-size: 12px;">Мой Проект</div>
+        </div>
+    </div>
+    <button class="create-plus" onclick="startEditor()">+</button>
 </div>
 
-<div class="main-menu">
-    <button class="btn" onclick="createNew()">➕ СОЗДАТЬ</button>
-    <button class="btn" id="btn3d" onclick="toggle3D()">🧊 3D РЕЖИМ</button>
-    <button class="btn" onclick="showSettings()">⚙️ ОПЦИИ</button>
-    <button class="btn" onclick="publish()">🌐 В СЕТЬ</button>
-    <button class="btn btn-gold" onclick="buyUpgrade()">⚡ UPGRADE</button>
-    <button class="btn" onclick="clearAll()" style="color:#ff4444; border-color:#ff4444;">🧹 СБРОС</button>
+<div id="editor">
+    <div id="fx-scan"></div>
+    <div class="top-bar">
+        <div style="color: var(--gold)">DUCKS: <span id="balance">1000</span></div>
+        <div id="selected-info">СТУДИЯ</div>
+        <button onclick="exitToHub()" style="background:none; border:none; color:red;">[ВЫХОД]</button>
+    </div>
+
+    <div id="world-container">
+        <div id="viewport" onmousedown="startDraw(event)" onmousemove="drawing(event)" onmouseup="stopDraw()" ontouchstart="startDraw(event)" ontouchmove="drawing(event)" ontouchend="stopDraw()">
+            <div id="hint" style="position: absolute; top: 200px; left: 100px; opacity: 0.3;">РИСУЙ ПАЛЬЦЕМ ЗДЕСЬ</div>
+        </div>
+
+        <div class="d-pad" id="dpad">
+            <div></div><div class="nav-btn" onclick="moveCam(0, 50)">▲</div><div></div>
+            <div class="nav-btn" onclick="moveCam(50, 0)">◀</div><div class="nav-btn" onclick="moveCam(0, 0)">🏠</div><div class="nav-btn" onclick="moveCam(-50, 0)">▶</div>
+            <div></div><div class="nav-btn" onclick="moveCam(0, -50)">▼</div><div></div>
+        </div>
+    </div>
+
+    <div class="tool-row">
+        <button class="lib-btn" onclick="currentShape='box'">🟦 КУБ</button>
+        <button class="lib-btn" onclick="currentShape='circle'">🔵 КРУГ</button>
+        <button class="lib-btn" onclick="currentShape='tri'">🔺 ПИРАМИДА</button>
+        <input type="color" id="colorPicker" value="#00f2ff" onchange="currentColor = this.value">
+        <button class="lib-btn" onclick="toggleScripts()" style="border-color: var(--gold);">📜 СКРИПТЫ</button>
+    </div>
+
+    <div id="script-panel" class="inspector hidden">
+        <div class="tool-row" style="border:none; padding:0; margin-bottom:5px;">
+            <button class="lib-btn" onclick="setScript('move')">🏃 MOVE</button>
+            <button class="lib-btn" onclick="setScript('jump')">🚀 JUMP</button>
+            <button class="lib-btn" onclick="setScript('spin')">🔄 SPIN</button>
+            <button class="lib-btn" onclick="setScript('kill')">💀 KILL_ZONE</button>
+        </div>
+        <textarea id="scriptInput" placeholder="// Код объекта..."></textarea>
+    </div>
+
+    <div class="main-menu">
+        <button class="btn" onclick="saveProject()">💾 СОХРАНИТЬ</button>
+        <button class="btn" id="btn3d" onclick="toggle3D()">🧊 3D VIEW</button>
+        <button class="btn" onclick="publish()">🌐 ПУБЛИКАЦИЯ</button>
+        <button class="btn" onclick="clearAll()" style="color:red;">🧹 СБРОС</button>
+    </div>
 </div>
 
 <script>
@@ -86,49 +137,78 @@
     tg.expand();
 
     let currentColor = '#00f2ff';
-    let balance = 1000;
-    let lvl = 1;
+    let currentShape = 'box';
     let is3D = false;
     let selectedObject = null;
+    let isDrawing = false;
+    let camX = 0, camY = 0;
 
-    // БИБЛИОТЕКА СКРИПТОВ
-    const scripts = {
-        'move_x': 'obj.animate({left: "+=50px"}, 500); // Двигаться вправо',
-        'jump': 'obj.style.transition = "0.3s"; obj.style.top = "-=30px"; // Прыжок',
-        'rotate': 'obj.style.transform += "rotate(45deg)"; // Поворот',
-        'blink': 'setInterval(() => { obj.style.opacity = (obj.style.opacity == 0 ? 1 : 0); }, 500);',
-        'ghost': 'obj.style.opacity = "0.5"; obj.style.filter = "blur(2px)";'
+    // Скрипты
+    const scriptLib = {
+        'move': 'void update() { this.x += Math.sin(time)*5; }',
+        'jump': 'onCollide(player) { player.velocity.y = 15; }',
+        'spin': 'void loop() { this.rotation.y += 2; }',
+        'kill': 'onCollide(player) { player.respawn(); }'
     };
 
-    function setScript(type) {
-        if(!selectedObject) return tg.showAlert("Сначала нажми на кубик на экране!");
-        document.getElementById('scriptInput').value = scripts[type];
-        tg.HapticFeedback.impactOccurred('light');
+    function startEditor() {
+        document.getElementById('hub').style.display = 'none';
+        document.getElementById('editor').style.display = 'flex';
     }
 
-    function handleMapClick(e) {
-        if (e.target.classList.contains('obj')) {
+    function exitToHub() {
+        document.getElementById('hub').style.display = 'flex';
+        document.getElementById('editor').style.display = 'none';
+    }
+
+    function moveCam(x, y) {
+        if(is3D) return;
+        camX += x; camY += y;
+        document.getElementById('viewport').style.left = camX + 'px';
+        document.getElementById('viewport').style.top = camY + 'px';
+    }
+
+    // РИСОВАНИЕ ПАЛЬЦЕМ
+    function startDraw(e) {
+        if(e.target.classList.contains('obj')) {
             selectObject(e.target);
             return;
         }
+        isDrawing = true;
         spawn(e);
     }
 
+    function drawing(e) {
+        if(!isDrawing || is3D) return;
+        // Спавним объекты только если палец прошел дистанцию (оптимизация)
+        if(Math.random() > 0.8) spawn(e);
+    }
+
+    function stopDraw() { isDrawing = false; }
+
     function spawn(e) {
-        document.getElementById('hint').style.display = 'none';
         const view = document.getElementById('viewport');
         const rect = view.getBoundingClientRect();
-        const x = e.clientX - rect.left - 12;
-        const y = e.clientY - rect.top - 12;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        const x = clientX - rect.left - 15;
+        const y = clientY - rect.top - 15;
 
         const obj = document.createElement('div');
         obj.className = 'obj';
+        if(currentShape === 'circle') obj.classList.add('shape-circle');
+        if(currentShape === 'tri') {
+            obj.classList.add('shape-tri');
+            obj.style.borderBottomColor = currentColor;
+        } else {
+            obj.style.backgroundColor = currentColor;
+            obj.style.boxShadow = `0 0 10px ${currentColor}`;
+        }
+        
         obj.style.left = x + 'px';
         obj.style.top = y + 'px';
-        obj.style.backgroundColor = currentColor;
-        obj.style.boxShadow = `0 0 15px ${currentColor}`;
         
-        if(is3D) apply3D(obj);
         view.appendChild(obj);
         selectObject(obj);
     }
@@ -137,55 +217,67 @@
         if(selectedObject) selectedObject.classList.remove('selected');
         selectedObject = el;
         selectedObject.classList.add('selected');
-        document.getElementById('selected-info').innerText = "ОБЪЕКТ ВЫБРАН";
-        tg.HapticFeedback.impactOccurred('medium');
+        tg.HapticFeedback.impactOccurred('light');
     }
 
+    // 3D ПЕРЕХОД В СТИЛЕ BLENDER
     function toggle3D() {
         is3D = !is3D;
-        const fx = document.getElementById('fx-overlay');
-        fx.style.opacity = '0.5';
-        setTimeout(() => {
-            fx.style.opacity = '0';
-            document.getElementById('btn3d').classList.toggle('btn-active');
-            tg.showAlert(is3D ? "ПЕРЕКЛЮЧЕНИЕ В 3D..." : "ВОЗВРАТ В 2D...");
-            document.querySelectorAll('.obj').forEach(o => is3D ? apply3D(o) : remove3D(o));
-        }, 300);
+        const view = document.getElementById('viewport');
+        const dpad = document.getElementById('dpad');
+        const scan = document.getElementById('fx-scan');
+
+        scan.style.opacity = '1';
+        setTimeout(() => scan.style.opacity = '0', 500);
+
+        if(is3D) {
+            view.style.transform = "rotateX(60deg) rotateZ(45deg) translateZ(-100px)";
+            dpad.style.display = 'none';
+            document.querySelectorAll('.obj').forEach(o => {
+                if(!o.classList.contains('shape-tri')) o.style.height = '60px';
+                o.style.transform = "translateZ(30px)";
+            });
+            tg.showAlert("3D VIEWPORT: Рендеринг сетки...");
+        } else {
+            view.style.transform = "none";
+            dpad.style.display = 'grid';
+            document.querySelectorAll('.obj').forEach(o => {
+                o.style.height = '30px';
+                o.style.transform = "none";
+            });
+        }
     }
 
-    function apply3D(el) {
-        el.style.transform = "perspective(600px) rotateX(45deg) rotateZ(45deg)";
-        el.style.height = "45px";
+    function setScript(key) {
+        document.getElementById('scriptInput').value = scriptLib[key];
     }
 
-    function remove3D(el) {
-        el.style.transform = "none"; el.style.height = "24px";
+    function toggleScripts() {
+        document.getElementById('script-panel').classList.toggle('hidden');
     }
 
-    function applyScript() {
-        if(!selectedObject) return tg.showAlert("Выбери объект!");
-        tg.HapticFeedback.notificationOccurred('success');
-        tg.showAlert("Логика привязана к объекту! Октокот запускает код...");
+    function saveProject() {
+        const data = document.getElementById('viewport').innerHTML;
+        localStorage.setItem('duck_project', data);
+        document.getElementById('savedProjectCard').style.display = 'block';
+        tg.showAlert("Проект сохранен в память Октокота! ✅");
     }
 
-    function buyUpgrade() {
-        if(balance >= 500) {
-            balance -= 500; lvl++;
-            document.getElementById('balance').innerText = balance;
-            document.getElementById('lvl').innerText = lvl;
-            tg.showAlert("ДВИЖОК УЛУЧШЕН!");
-        } else { tg.showAlert("Мало золота!"); }
+    function showSettings() {
+        tg.showAlert("НАСТРОЙКИ:\n- Качество: ULTRA\n- Отрисовка: WebGL\n- Аккаунт: Verified");
+    }
+
+    function publish() {
+        tg.showConfirm("Опубликовать во всемирную сеть Duck Studio?", (ok) => {
+            if(ok) tg.showAlert("🚀 Опубликовано! Плейс доступен в общем Хабе.");
+        });
     }
 
     function clearAll() {
-        document.getElementById('viewport').innerHTML = '<div id="hint" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.2; font-size: 18px;">[ DUCK ENGINE READY ]</div>';
-        selectedObject = null;
-        document.getElementById('selected-info').innerText = "ВЫБЕРИ ОБЪЕКТ";
+        document.getElementById('viewport').innerHTML = '';
+        tg.HapticFeedback.notificationOccurred('warning');
     }
-
-    function publish() { tg.showConfirm("Опубликовать?", (ok) => { if(ok) tg.showAlert("В СЕТИ!"); }); }
-    function createNew() { tg.showConfirm("Новый проект?", (ok) => { if(ok) clearAll(); }); }
-    function showSettings() { tg.showAlert("DUCK STUDIO v4.6\nMode: Full Access\nRender: WebGL Core"); }
 </script>
 </body>
 </html>
+
