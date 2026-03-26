@@ -3,100 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Duck Mode Ultra Studio</title>
+    <title>Duck Studio Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root { --neon: #00f2ff; --dark: #050505; --pink: #ff00ff; }
-        body { background: var(--dark); color: var(--neon); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; touch-action: manipulation; }
+        :root { --neon: #00f2ff; --pink: #ff00ff; --gold: #ffd700; --bg: #0a0a0a; }
+        body { background: var(--bg); color: var(--neon); font-family: 'Consolas', monospace; margin: 0; overflow: hidden; }
         
-        /* ШАПКА ШТАБА */
-        .header { background: #111; padding: 10px; border-bottom: 2px solid var(--neon); display: flex; justify-content: space-between; align-items: center; }
-        .stats { font-size: 12px; color: var(--pink); text-shadow: 0 0 5px var(--pink); }
+        /* ИНТЕРФЕЙС ШТАБА */
+        .top-bar { display: flex; justify-content: space-between; padding: 10px; background: #111; border-bottom: 2px solid var(--neon); font-size: 12px; }
+        .money-count { color: var(--gold); }
 
-        /* ЗОНА СТРОИТЕЛЬСТВА (GRID) */
-        .build-area { 
-            width: 90vw; height: 300px; margin: 15px auto; 
-            background-image: linear-gradient(var(--neon) 1px, transparent 1px), linear-gradient(90deg, var(--neon) 1px, transparent 1px);
-            background-size: 30px 30px; border: 1px solid rgba(0, 242, 255, 0.3);
-            position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;
+        /* ИГРОВОЕ ПОЛЕ */
+        #viewport { 
+            width: 100vw; height: 250px; background: #151515; position: relative;
+            background-image: radial-gradient(circle, #333 1px, transparent 1px); background-size: 20px 20px;
+            overflow: hidden; cursor: crosshair;
         }
-        .duck-object { width: 30px; height: 30px; background: gold; border-radius: 5px; position: absolute; box-shadow: 0 0 10px gold; }
+        .obj { position: absolute; width: 20px; height: 20px; border-radius: 3px; box-shadow: 0 0 5px currentColor; transition: 0.2s; }
 
-        /* ПАНЕЛЬ УПРАВЛЕНИЯ */
-        .panel { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
-        .btn { 
-            background: rgba(0, 242, 255, 0.1); border: 1px solid var(--neon); color: var(--neon); 
-            padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase;
-        }
+        /* ИНСТРУМЕНТЫ */
+        .toolbar { display: flex; background: #1a1a1a; padding: 10px; gap: 10px; overflow-x: auto; border-bottom: 1px solid #333; }
+        .color-dot { width: 25px; height: 25px; border-radius: 50%; border: 2px solid white; cursor: pointer; flex-shrink: 0; }
+        
+        /* СКРИПТ-ЗОНА */
+        .script-zone { padding: 10px; }
+        textarea { width: 90%; background: #000; color: #0f0; border: 1px solid #0f0; padding: 10px; font-family: monospace; height: 60px; border-radius: 5px; }
+
+        /* КНОПКИ */
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
+        .btn { background: #222; border: 1px solid var(--neon); color: var(--neon); padding: 12px; border-radius: 5px; font-size: 11px; cursor: pointer; }
         .btn:active { background: var(--neon); color: #000; }
-        .btn.upgrade { border-color: var(--pink); color: var(--pink); }
+        .btn-gold { border-color: var(--gold); color: var(--gold); }
 
-        /* ТВОИ КРУТЫЕ ИДЕИ В НАСТРОЙКАХ */
-        #settings-panel { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; padding-top: 50px; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <div><b>DUCK MODE v4.2</b></div>
-        <div class="stats">CORE TEMP: 36.6°C | OCTO-LINK: OK</div>
-    </div>
+<div class="top-bar">
+    <div>LVL: <span id="lvl">1</span></div>
+    <div class="money-count">DUCKS: <span id="balance">1000</span> 🟡</div>
+    <div id="mode-display">MODE: 2D</div>
+</div>
 
-    <div class="build-area" id="map" onclick="placeObject(event)">
-        <p id="hint">Нажми на сетку, чтобы строить блоки</p>
-    </div>
+<div class="toolbar" id="palette">
+    <div class="color-dot" style="background: #00f2ff;" onclick="setColor('#00f2ff')"></div>
+    <div class="color-dot" style="background: #ff00ff;" onclick="setColor('#ff00ff')"></div>
+    <div class="color-dot" style="background: #ffd700;" onclick="setColor('#ffd700')"></div>
+    <div class="color-dot" style="background: #ff4444;" onclick="setColor('#ff4444')"></div>
+    <div class="color-dot" style="background: #44ff44;" onclick="setColor('#44ff44')"></div>
+</div>
 
-    <div class="panel">
-        <button class="btn" onclick="clearMap()">🧹 Очистить</button>
-        <button class="btn" onclick="saveProject()">💾 Сохранить</button>
-        <button class="btn upgrade" onclick="upgradeEngine()">⚡ Улучшить движок</button>
-        <button class="btn" onclick="toggleSettings()">⚙️ Секреты Октокота</button>
-    </div>
+<div id="viewport" onclick="spawn(event)"></div>
 
-    <div id="settings-panel">
-        <h2>🛠 ЭКСПЕРИМЕНТАЛЬНЫЙ ЦЕХ</h2>
-        <button class="btn" onclick="alert('АНТИ-ХАКЕР: Включен протокол FUCK_YOU.exe')">🔒 Режим защиты</button>
-        <button class="btn" onclick="alert('3D РЕНДЕР: Утки теперь в 4K')">🎥 Сверх-графика</button>
-        <button class="btn" onclick="alert('PHONK: Музыка будет добавлена в V5')">🎶 Плеер Фонка</button>
-        <button class="btn" style="border-color: red; color: red;" onclick="toggleSettings()">❌ ЗАКРЫТЬ</button>
-    </div>
+<div class="script-zone">
+    <label>📜 PYTHON/JS SCRIPT ENGINE:</label>
+    <textarea id="scriptInput" placeholder="move_objects(speed=5)..."></textarea>
+</div>
 
-    <script>
-        let tg = window.Telegram.WebApp;
-        tg.expand();
+<div class="controls">
+    <button class="btn" onclick="toggleMode()">🔄 СМЕНИТЬ 2D/3D</button>
+    <button class="btn" onclick="executeScript()">▶️ ЗАПУСТИТЬ СКРИПТ</button>
+    <button class="btn btn-gold" onclick="buyUpgrade()">⚡ УЛУЧШИТЬ (500 🟡)</button>
+    <button class="btn" onclick="publishProject()">🌐 ОПУБЛИКОВАТЬ</button>
+    <button class="btn" onclick="clearAll()" style="border-color: red; color: red;">🧹 СБРОС</button>
+</div>
 
-        function placeObject(e) {
-            document.getElementById('hint').style.display = 'none';
-            let map = document.getElementById('map');
-            let rect = map.getBoundingClientRect();
-            let x = Math.floor((e.clientX - rect.left) / 30) * 30;
-            let y = Math.floor((e.clientY - rect.top) / 30) * 30;
+<script>
+    let tg = window.Telegram.WebApp;
+    tg.expand();
 
-            let block = document.createElement('div');
-            block.className = 'duck-object';
-            block.style.left = x + 'px';
-            block.style.top = y + 'px';
-            map.appendChild(block);
+    let currentColor = '#00f2ff';
+    let balance = 1000;
+    let level = 1;
+    let is3D = false;
+
+    function setColor(c) {
+        currentColor = c;
+        tg.HapticFeedback.impactOccurred('light');
+    }
+
+    function spawn(e) {
+        const view = document.getElementById('viewport');
+        const rect = view.getBoundingClientRect();
+        const x = e.clientX - rect.left - 10;
+        const y = e.clientY - rect.top - 10;
+
+        const obj = document.createElement('div');
+        obj.className = 'obj';
+        obj.style.left = x + 'px';
+        obj.style.top = y + 'px';
+        obj.style.color = currentColor;
+        obj.style.background = currentColor;
+        
+        if(is3D) {
+            obj.style.transform = 'rotateX(45deg) rotateZ(45deg)';
+            obj.style.height = '40px';
         }
 
-        function clearMap() {
-            document.getElementById('map').innerHTML = '<p id="hint">Нажми на сетку, чтобы строить блоки</p>';
-        }
+        view.appendChild(obj);
+    }
 
-        function upgradeEngine() {
-            tg.showConfirm("Потратить 500 золотых уток на улучшение?", (ok) => {
-                if(ok) tg.showAlert("ДВИЖОК УЛУЧШЕН! Теперь объекты светятся ярче.");
-            });
-        }
+    function toggleMode() {
+        is3D = !is3D;
+        document.getElementById('mode-display').innerText = is3D ? "MODE: 3D" : "MODE: 2D";
+        tg.showAlert(is3D ? "Переход в 3D пространство Октокота..." : "Возврат в 2D чертежи.");
+    }
 
-        function toggleSettings() {
-            let s = document.getElementById('settings-panel');
-            s.style.display = (s.style.display == 'block') ? 'none' : 'block';
+    function buyUpgrade() {
+        if(balance >= 500) {
+            balance -= 500;
+            level++;
+            document.getElementById('balance').innerText = balance;
+            document.getElementById('lvl').innerText = level;
+            tg.showAlert("Движок улучшен до LVL " + level + "! Разблокированы новые частицы.");
+        } else {
+            tg.showAlert("Недостаточно золотых уток! Нужно больше ресурсов.");
         }
+    }
 
-        function saveProject() {
-            tg.showAlert("Проект 'Duck Mode' сохранен в облаке Октокота! 🐙");
+    function executeScript() {
+        const sc = document.getElementById('scriptInput').value;
+        if(sc.includes("move")) {
+            const objs = document.querySelectorAll('.obj');
+            objs.forEach(o => { o.style.left = (parseInt(o.style.left) + 50) + 'px'; });
+            tg.HapticFeedback.notificationOccurred('success');
+        } else {
+            tg.showAlert("Скрипт принят! Октокот обрабатывает логику...");
         }
-    </script>
+    }
+
+    function publishProject() {
+        tg.showConfirm("Опубликовать проект в облако Duck Games?", (ok) => {
+            if(ok) tg.showAlert("✅ ПРОЕКТ ОПУБЛИКОВАН! Ссылка отправлена в штаб.");
+        });
+    }
+
+    function clearAll() {
+        document.getElementById('viewport').innerHTML = '';
+    }
+</script>
+
 </body>
 </html>
